@@ -8,6 +8,7 @@ export default function makeRepairDataProperties() {
     defineProperties,
     getOwnPropertyDescriptors,
     hasOwnProperty,
+    getPrototypeOf,
   } = Object;
   const { ownKeys } = Reflect;
 
@@ -114,6 +115,7 @@ export default function makeRepairDataProperties() {
       g.DataView.prototype,
 
       a.TypedArray,
+      getPrototypeOf(a.TypedArray),
       g.Int8Array.prototype,
       g.Int16Array.prototype,
       g.Int32Array.prototype,
