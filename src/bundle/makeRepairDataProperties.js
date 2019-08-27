@@ -37,7 +37,7 @@ export default function makeRepairDataProperties() {
    * simulate what we should have specified -- that assignments to derived
    * objects succeed if otherwise possible.
    */
-  function beMutable(obj, prop, desc) {
+  function enableDerivedOverride(obj, prop, desc) {
     if ('value' in desc && desc.configurable) {
       const { value } = desc;
 
@@ -78,17 +78,6 @@ export default function makeRepairDataProperties() {
     }
   }
 
-  function beMutableProperties(obj) {
-    if (!obj) {
-      return;
-    }
-    const descs = getOwnPropertyDescriptors(obj);
-    if (!descs) {
-      return;
-    }
-    ownKeys(obj).forEach(prop => beMutable(obj, prop, descs[prop]));
-  }
-
   /**
    * These properties are subject to the override mistake
    * and must be converted before freezing.
@@ -103,6 +92,7 @@ export default function makeRepairDataProperties() {
       g.Date.prototype,
       g.Number.prototype,
       g.String.prototype,
+      g.RegExp.prototype,
 
       g.Function.prototype,
       a.GeneratorFunction.prototype,
@@ -114,14 +104,13 @@ export default function makeRepairDataProperties() {
 
       g.DataView.prototype,
 
-      a.TypedArray,
       a.TypedArray.prototype,
       g.Int8Array.prototype,
       g.Int16Array.prototype,
       g.Int32Array.prototype,
-      g.Uint8Array,
-      g.Uint16Array,
-      g.Uint32Array,
+      g.Uint8Array.prototype,
+      g.Uint16Array.prototype,
+      g.Uint32Array.prototype,
 
       g.Error.prototype,
       g.EvalError.prototype,
@@ -133,12 +122,26 @@ export default function makeRepairDataProperties() {
     ];
 
     // Promise may be removed from the whitelist
+    // TODO: the toBeRepaired list should be prepared
+    // externally and provided to repairDataProperties
     const PromisePrototype = g.Promise && g.Promise.prototype;
     if (PromisePrototype) {
       toBeRepaired.push(PromisePrototype);
     }
 
-    toBeRepaired.forEach(beMutableProperties);
+    // repair each entry
+    toBeRepaired.forEach(obj => {
+      if (!obj) {
+        return;
+      }
+      const descs = getOwnPropertyDescriptors(obj);
+      if (!descs) {
+        return;
+      }
+      ownKeys(obj).forEach(prop =>
+        enableDerivedOverride(obj, prop, descs[prop]),
+      );
+    });
   }
 
   return repairDataProperties;
